@@ -17,6 +17,7 @@ from .orm_factories import (
     multirow_cls_factory,
     resolve_entity,
     single_cls_factory,
+    resolve_entity_arraydata,
 )
 from .utils import JSON, FilterString
 
@@ -176,6 +177,28 @@ class NodesQuery(multirow_cls_factory(NodeQuery, orm.nodes.Node, "nodes")):  # t
     """Query all AiiDA Nodes"""
 
 
+class ArrayDataQuery(NodeQuery):
+    """Query an AiiDA BandsData node"""
+
+    arrays = JSON(
+        description="Variable arrays of the node",
+        filter=gr.List(
+            gr.String,
+            description="return an exact set of array keys (non-existent will return null)",
+        ),
+    )
+
+    @staticmethod
+    def resolve_arrays(
+        parent: Any, info: gr.ResolveInfo, filter: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """Resolution function."""
+        arraynames = parent
+        if filter is None or arraynames is None:
+            return arraynames
+        return {key: parent.get_array(key) for key in filter}
+
+
 def resolve_Node(
     parent: Any,
     info: gr.ResolveInfo,
@@ -194,6 +217,16 @@ def resolve_Nodes(
     return {"filters": parse_filter_str(filters)}
 
 
+def resolve_ArrayData(
+    parent: Any,
+    info: gr.ResolveInfo,
+    id: Optional[int] = None,
+    uuid: Optional[str] = None,
+) -> ENTITY_DICT_TYPE:
+    """Resolution function."""
+    return resolve_entity_arraydata(orm.nodes.ArrayData, info, id, uuid)
+
+
 NodeQueryPlugin = QueryPlugin(
     "node",
     gr.Field(
@@ -207,4 +240,11 @@ NodesQueryPlugin = QueryPlugin(
         NodesQuery, description="Query for multiple Nodes", filters=FilterString()
     ),
     resolve_Nodes,
+)
+ArrayDataQueryPlugin = QueryPlugin(
+    "arrayData",
+    gr.Field(
+        ArrayDataQuery, id=gr.Int(), uuid=gr.String(), description="Query for a single ArrayData"
+    ),
+    resolve_ArrayData,
 )

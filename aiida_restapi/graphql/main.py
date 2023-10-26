@@ -8,7 +8,7 @@ from .computers import ComputerQueryPlugin, ComputersQueryPlugin
 from .entry_points import aiidaEntryPointGroupsPlugin, aiidaEntryPointsPlugin
 from .groups import GroupQueryPlugin, GroupsQueryPlugin
 from .logs import LogQueryPlugin, LogsQueryPlugin
-from .nodes import NodeQueryPlugin, NodesQueryPlugin
+from .nodes import NodeQueryPlugin, NodesQueryPlugin, ArrayDataQueryPlugin
 from .plugins import create_schema
 from .users import UserQueryPlugin, UsersQueryPlugin
 
@@ -30,6 +30,7 @@ SCHEMA = create_schema(
         NodesQueryPlugin,
         UserQueryPlugin,
         UsersQueryPlugin,
+        ArrayDataQueryPlugin,
     ]
 )
 

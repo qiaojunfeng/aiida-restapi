@@ -243,3 +243,41 @@ def resolve_entity(
     if not entities:
         return None
     return entities[0]["result"]
+
+
+@with_dbenv()
+def resolve_entity_arraydata(
+    orm_cls: orm.BandsData,
+    info: gr.ResolveInfo,
+    id: Optional[int] = None,
+    uuid: Optional[str] = None,
+    label: Optional[str] = None,
+    uuid_name: str = "uuid",
+) -> ENTITY_DICT_TYPE:
+    """Query for a single entity, and project only the fields requested."""
+    filters: Dict[str, Union[str, int]]
+    if id is not None:
+        assert uuid is None, f"Only one of id or {uuid_name} can be specified"
+        filters = {"id": id}
+    elif uuid is not None:
+        filters = {uuid_name: uuid}
+    elif label is not None:
+        filters = {"label": label}
+    else:
+        raise AssertionError(f"One of id, {uuid_name}, or label must be specified")
+
+    db_fields = field_names_from_orm(orm_cls)
+    project = get_projection(db_fields, info)
+    project = ['*', *project]
+    entities = (
+        orm.QueryBuilder()
+        .append(orm_cls, tag="result", filters=filters, project=project)
+        .dict()
+    )
+    if not entities:
+        return None
+    result = entities[0]["result"]
+    node = result.pop("*")
+    for key in node.get_arraynames():
+        result[key] = node.get_array(key).tolist()
+    return result
